@@ -2,12 +2,12 @@ def say(str)
   puts "=> #{str}"
 end
 
-def is_a_number?(num)
-  num =~ /\d/
+def is_valid?(num)
+  num == num.to_i.to_s
 end
 
-def invalid_number(num)
-  puts "#{num} is not a valid number. Please try again:"
+def not_a_number_error(num)
+  puts "#{num} is not a number. Please enter a number:"
 end
 
 loop do
@@ -18,67 +18,56 @@ loop do
 
   case calculate
 
+  # If a valid operation is selected
   when "1", "2", "3", "4"
 
     loop do
-
       say "The first number is:"
       num1 = gets.chomp
 
-      loop do
-
-        if is_a_number?(num1) == nil
-          invalid_number(num1)
+        until is_valid?(num1)
+          not_a_number_error(num1)
           num1 = gets.chomp
-        else
-          break
         end
-
-      end
 
       say "The second number is:"
       num2 = gets.chomp
 
-      loop do
-
-        if is_a_number?(num2) == nil
-          invalid_number(num2)
+        until is_valid?(num2)
+          not_a_number_error(num2)
           num2 = gets.chomp
-        else
-          break
         end
+    
+      first = num1.to_f
+      second = num2.to_f
 
+      case calculate
+      when "1"
+        result = first + second
+        operator = "+"
+      when "2"
+        result = first - second
+        operator = "-"
+      when "3"
+        result = first * second
+        operator = "x"
+      else
+        result = first / second
+        operator = "÷"
       end
 
-      if is_a_number?(num1) && is_a_number?(num2)
-        
-        case calculate
-        when "1"
-          result = num1.to_f + num2.to_f
-          operator = "+"
-        when "2"
-          result = num1.to_f - num2.to_f
-          operator = "-"
-        when "3"
-          result = num1.to_f * num2.to_f
-          operator = "x"
-        else
-          result = num1.to_f / num2.to_f
-          operator = "÷"
-        end
-
-        calculation = "#{num1} #{operator} #{num2}"
-        say "#{calculation} = #{result}"
-        break
-      end
-
+      calculation = "#{num1} #{operator} #{num2}"
+      say "#{calculation} = #{result}"
+      break
     end
 
+  # If the user does not select one of the available operations
   else
     puts "That is not a valid option.\n\n"
     redo
   end
 
+  # Once a calculation is complete
   puts "-----------------------------------------------"
   say "Would you like to make another calculation? \n
   \t1) Yes\n\t2) No"
@@ -87,10 +76,10 @@ loop do
   loop do
 
     case again
-    when "1", "Yes", "2", "No"
+    when "1", "2"
       break
     else 
-      say "Please enter 1) Yes / 2) No"
+      say "Please enter 1) Yes or 2) No"
       again = gets.chomp
     end
 
