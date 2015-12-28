@@ -31,19 +31,15 @@ puts "Welcome to Rock, Paper, Scissors!"
 
 loop do
 
-  # Player makes a choice 
   begin
     format "Pick one: (R / P / S)"
     player_choice = gets.chomp.downcase
   end until CHOICES.keys.include?(player_choice)
 
-  # Computer makes a choice
   computer_choice = CHOICES.keys.sample
 
-  # Display choices
   display_choices(player_choice, computer_choice)
 
-  # Compare choices
   if player_choice == computer_choice 
     format "It's a tie!"
   elsif (player_choice == 'r' && computer_choice == 's') ||
@@ -56,7 +52,6 @@ loop do
     format "Computer wins!"
   end
 
-  # Play again?
   puts "Another round? (Y/N)"
   break if gets.chomp.downcase != 'y'
 

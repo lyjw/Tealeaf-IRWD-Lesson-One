@@ -3,7 +3,7 @@ def say(str)
 end
 
 def is_valid?(num)
-  num == num.to_i.to_s
+  num =~ /^\d+.?\d*$/
 end
 
 def not_a_number_error(num)
@@ -12,8 +12,16 @@ end
 
 loop do
 
-  say "What would you like to do?
-  \t1) Add \n\t2) Subtract \n\t3) Multiply \n\t4) Divide"
+greeting =<<-EOL
+What would you like to do?
+    1) Add
+    2) Subtract
+    3) Multiply
+    4) Divide
+EOL
+
+  say greeting
+
   calculate = gets.chomp
 
   case calculate
@@ -22,22 +30,23 @@ loop do
   when "1", "2", "3", "4"
 
     loop do
+
       say "The first number is:"
       num1 = gets.chomp
 
-        until is_valid?(num1)
-          not_a_number_error(num1)
-          num1 = gets.chomp
-        end
+      until is_valid?(num1)
+        not_a_number_error(num1)
+        num1 = gets.chomp
+      end 
 
       say "The second number is:"
       num2 = gets.chomp
 
-        until is_valid?(num2)
-          not_a_number_error(num2)
-          num2 = gets.chomp
-        end
-    
+      until is_valid?(num2)
+        not_a_number_error(num2)
+        num2 = gets.chomp
+      end
+
       first = num1.to_f
       second = num2.to_f
 
@@ -52,7 +61,11 @@ loop do
         result = first * second
         operator = "x"
       else
-        result = first / second
+        if second == 0
+          result = "Division by 0 is undefined."
+        else
+          result = first / second
+        end
         operator = "÷"
       end
 
