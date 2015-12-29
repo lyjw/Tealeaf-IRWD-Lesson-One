@@ -1,3 +1,7 @@
+require 'colorize'
+
+CHOICES = {"r" => "Rock", "p" => "Paper", "s" => "Scissors"}
+
 def format(line)
   puts "=> #{line}"
 end
@@ -26,10 +30,10 @@ def winning_result(choice)
   end
 end
 
-CHOICES = {"r" => "Rock", "p" => "Paper", "s" => "Scissors"}
-puts "Welcome to Rock, Paper, Scissors!"
-
 loop do
+  system "clear"
+
+  puts "Welcome to Rock, Paper, Scissors!\n\n"
 
   begin
     format "Pick one: (R / P / S)"
@@ -41,18 +45,18 @@ loop do
   display_choices(player_choice, computer_choice)
 
   if player_choice == computer_choice 
-    format "It's a tie!"
+    puts "It's a tie!".colorize(:yellow)
   elsif (player_choice == 'r' && computer_choice == 's') ||
         (player_choice == 'p' && computer_choice == 'r') ||
         (player_choice == 's' && computer_choice == 'p')
     winning_result(player_choice)
-    format "Player wins!"
+    puts "Player wins!".colorize(:green)
   else
     winning_result(computer_choice) 
-    format "Computer wins!"
+    puts "Computer wins!".colorize(:red)
   end
 
-  puts "Another round? (Y/N)"
+  format "Another round? (Y/N)"
   break if gets.chomp.downcase != 'y'
 
 end
