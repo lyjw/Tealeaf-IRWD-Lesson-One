@@ -3,7 +3,7 @@ def say(str)
 end
 
 def is_valid?(num)
-  num =~ /^\d+.?\d*$/
+  !!(num =~ /^\d+\.?\d*$/)
 end
 
 def not_a_number_error(num)
