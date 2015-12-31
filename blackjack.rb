@@ -1,4 +1,5 @@
 require 'pry'
+require 'colorize'
 
 # Pseudo Code
 # ----------------------------------------
@@ -24,34 +25,41 @@ require 'pry'
 # end
 
 # If neither the player or dealer won
-# Compare the sum of the two hands
+# Reveal cards and compare the sum of the two hands
 # Higher value wins
 
 # Play again?
 # ----------------------------------------
 
-# Initialize deck
-def initialize_deck
-  set = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+# Initialize Game
+def initialize_deck(number_of_decks)
+  set = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
+  suits = ['♠', '♥', '♣', '♦']
   d = {}
-  set.each do |card|
-    ['♠', '♥', '♣', '♦'].each do |suit|
-      card_with_suit = "#{card} #{suit}"
-      if card.to_i != 0
-        d[card_with_suit] = { value: card.to_i, alt_value: nil }
-      elsif card == "J" || card == "Q" || card == "K"
-        d[card_with_suit] = { value: 10, alt_value: nil }
-      elsif card == "A"
-        d[card_with_suit] = { value: 11, alt_value: 1 } 
+  number_of_decks.times do 
+    set.each do |card|
+      suits.each do |suit|
+        card_with_suit = "#{card} #{suit}"
+        if card.to_i != 0
+          d[card_with_suit] = { value: card.to_i }
+        elsif card == "J" || card == "Q" || card == "K"
+          d[card_with_suit] = { value: 10 }
+        elsif card == "A"
+          d[card_with_suit] = { value: 11, alt_value: 1 } 
+        end
       end
     end
   end
   d
 end
 
-# Initalize Player and Dealer hands
 def initialize_hand
   hand = {}
+end
+
+# Divider
+def print_divider
+  puts "------------------------------------------"
 end
 
 # Returns a random card from the deck
@@ -71,12 +79,20 @@ def deal_cards(deck, hand, num)
   end
 end
 
+def hit(deck, hand)
+  deal_cards(deck, hand, 1)
+end
+
+# Display Cards
 def display_cards(hand)
-  puts "Your hand consists of the following cards:"
   hand.each { |card, _| puts "- #{card}" }
 end
 
-# Change Ace value
+def display_dealer_upcard(hand)
+  puts "The Dealer's upcard is: #{hand.keys.first}"
+end
+
+# Change Ace Value
 def ace_cards_held(hand)
   ace_cards = nil
 
@@ -86,7 +102,7 @@ def ace_cards_held(hand)
       ace_cards << card
     end
   end
-  ace_cards # ["A ", "A "]
+  ace_cards
 end
 
 def should_change_ace_value?(hand)
@@ -102,6 +118,7 @@ def set_ace_value_to_one(hand)
   end
 end
 
+# Sum of Cards
 def sum_of_cards(hand)
   sum = 0
 
@@ -111,46 +128,85 @@ def sum_of_cards(hand)
   sum
 end
 
-# Determine winner
+# Check for Blackjack and Bust
 def got_blackjack?(hand)
   sum_of_cards(hand) == 21
+end
+
+def announce_blackjack(player, dealer)
+  if got_blackjack?(player)
+    puts "\n#{PLAYER_NAME.upcase} GOT BLACKJACK!"
+  elsif got_blackjack?(dealer)
+    puts "\nDEALER GOT BLACKJACK."
+  end
 end
 
 def bust?(hand)
   sum_of_cards(hand) > 21
 end
 
-def check_for_blackjack_winner(dealer, player)
-  if got_blackjack?(dealer)
+def announce_bust(player, dealer)
+  if bust?(player)
+    puts "\nOH NO! #{PLAYER_NAME.upcase} BUST."
+  elsif bust?(dealer)
+    puts "\nDEALER BUST."
+  end
+end
+
+def win_by_blackjack_or_bust?(player, dealer)
+  got_blackjack?(dealer) || bust?(player) || got_blackjack?(player) || bust?(dealer)
+end
+
+# Check for Winner
+def check_winner(player, dealer)
+  dealer_total = sum_of_cards(dealer)
+  player_total = sum_of_cards(player)
+
+  # Blackjack or Bust
+  if win_by_blackjack_or_bust?(player, dealer)
+    if got_blackjack?(player) || bust?(dealer)
+      winner = "#{PLAYER_NAME}"
+    elsif got_blackjack?(dealer) || bust?(player)
+      winner = 'Dealer'
+    end
+  # No Blackjack and No Bust
+  elsif dealer_total > player_total
     winner = 'Dealer'
-  elsif got_blackjack?(player)
-    winner = 'You'
-  else
-    winner = nil
+  elsif player_total > dealer_total
+    winner = "#{PLAYER_NAME}"
+  elsif dealer_total == player_total
+    winner = 'It\'s a tie.'
   end
   winner
 end
 
-def got_blackjack?(hand)
-  sum_of_cards(hand) == 21
+def announce_winner(player, dealer)
+  winner = check_winner(player, dealer)
+
+  if got_blackjack?(player) || got_blackjack?(dealer) || bust?(player) || bust?(dealer)
+    puts "\nWinner: #{winner}"
+  else
+    puts "#{PLAYER_NAME}'s hand:"
+    display_cards(player)
+    puts "The sum of #{PLAYER_NAME}'s hand is #{sum_of_cards(player)}.\n\n"
+    puts "Dealer's hand:"
+    display_cards(dealer)
+    puts "The sum of the dealer's hand is #{sum_of_cards(dealer)}.\n\n"
+    puts "Winner: #{winner}"
+  end
+
+  print_divider
 end
 
-def bust?(hand)
-  sum_of_cards(hand) > 21
-end
-
-def hit(deck, hand)
-  deal_cards(deck, hand, 1)
-end
-
-# Player Gameplay
+# Player Turn
 def player_turn(deck, hand)
   action = ''
 
-  puts '| Player\'s Turn |'
+  puts "| #{PLAYER_NAME}'s Turn |\n\n"
 
   loop do 
     # Display cards in hand 
+    puts "#{PLAYER_NAME}'s hand:"
     display_cards(hand)
 
     if should_change_ace_value?(hand)
@@ -163,45 +219,106 @@ def player_turn(deck, hand)
 
     # Hit or Stay
     puts 'Would you like to "Hit" or "Stay"?'
-    action = gets.chomp.downcase
 
-    # Hit
-    if action == 'hit'
-      hit(deck, hand)
-    # Stay
-    elsif action == 'stay'
-      break
-    # Input Error if Player does not choose one of the given options
-    else
-      begin
-        puts 'Please choose either to "Hit" or "Stay:"'
-        action = gets.chomp.downcase
-      end until action == 'hit' && action == 'stay'
+    loop do
+      action = gets.chomp.downcase
+
+      if action == 'hit' || action == 'stay'
+        break
+      else
+        puts 'Please choose either to "Hit" or "Stay":'
+      end
+    end 
+
+    hit(deck, hand) if action == 'hit'
+    print_divider
+    break if action == 'stay'
+  end
+end
+
+# Dealer's Turn
+def dealer_turn(deck, hand)
+  action = ''
+
+  puts "| Dealer's Turn |\n\n"
+
+  loop do 
+    puts "Dealer's hand:"
+    display_cards(hand)
+
+    if should_change_ace_value?(hand)
+      set_ace_value_to_one(hand)
     end
 
+    sleep 1
+    # Hit if sum of cards is less than 17
+    if sum_of_cards(hand) < 17
+      hit(deck, hand)
+      puts 'Dealer hits.'
+    # Stay if sum is 17 - 21
+    elsif sum_of_cards(hand) < 21
+      puts 'Dealer stays.'
+      break
+    end
+    break if got_blackjack?(hand) || bust?(hand)
   end
 
+  print_divider
 end
 
 # Game Rundown
-# loop do
-  system 'clear'
+system 'clear'
 
-  deck = initialize_deck
+number_of_decks = 3
+deck = initialize_deck(number_of_decks)
+round = 1
+player_wins = 0
+
+puts 'Welcome to the Blackjack table.'
+puts 'What is your name?'
+PLAYER_NAME = gets.chomp
+
+loop do
   player_hand = initialize_hand
   dealer_hand = initialize_hand
+  
   winner = nil
 
-  puts 'Welcome to the Blackjack table.'
-  puts 'What is your name?'
-  player_name = gets.chomp
-  puts "Hello, #{player_name}. Let the games begin."
+  system 'clear'
+  puts "Hello, #{PLAYER_NAME}. Let Round #{round} begin.\n\n"
 
   deal_cards(deck, player_hand, 2)
   deal_cards(deck, dealer_hand, 2)
+  display_dealer_upcard(dealer_hand)
+  print_divider
 
   begin
     player_turn(deck, player_hand)
-    break
-  end until got_blackjack?(player_hand) || got_blackjack?(dealer_hand) || bust?(player_hand) || bust?(dealer_hand)
-# end 
+    break if got_blackjack?(player_hand) || bust?(player_hand)
+    dealer_turn(deck, dealer_hand)
+    break if got_blackjack?(player_hand) || bust?(player_hand)
+    winner = check_winner(dealer_hand, player_hand)
+  end until winner != nil
+
+  announce_blackjack(player_hand, dealer_hand)
+  announce_bust(player_hand, dealer_hand)
+  announce_winner(player_hand, dealer_hand)
+
+  # Track number of times player wins
+  if check_winner(player_hand, dealer_hand) == "#{PLAYER_NAME}"
+    player_wins += 1
+  end
+
+  puts "Play again? (Y/N)"
+  choice = gets.chomp.downcase
+
+  if choice == 'y'
+    round += 1
+    redo
+  end
+  break if choice != 'y'
+end 
+
+print_divider
+puts "Thank you for playing!"
+puts "You won #{player_wins} hands out of #{round}."
