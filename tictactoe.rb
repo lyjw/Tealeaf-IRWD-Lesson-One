@@ -153,8 +153,7 @@ def player_picks_square(board, reference_board)
   if best_move(board, 'X') || best_move(board, 'O')
     puts "Pick a Square (Type 'hint' if you need some help):"
     position = pick_with_hint(board, reference_board)
-
-  elsif best_move(board, 'O').nil?
+  else
     puts "Pick a Square:"
     position = pick_a_square(board)
   end
