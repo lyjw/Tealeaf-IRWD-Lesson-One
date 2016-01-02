@@ -1,18 +1,18 @@
 require 'pry'
 require 'colorize'
 
-WINNING_LINES = [[1,2,3], [4,5,6], [7,8,9], [1,4,7], [2,5,8], [3,6,9], [1,5,9], [3,5,7]]
+WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
 
 # Initializes hashes to track the state of the board
 def initialize_board
   b = {}
-  (1..9).each {|position| b[position] = ' '}
+  (1..9).each { |position| b[position] = ' ' }
   b
 end
 
 def initialize_reference_board
   r = {}
-  (1..9).each {|position| r[position] = "#{position}"}
+  (1..9).each { |position| r[position] = "#{position}" }
   r
 end
 
@@ -32,13 +32,13 @@ end
 
 # Checks for open squares on the board
 def empty_squares?(board)
-  board.select {|square, value| value == ' '}.keys
+  board.select { |square, value| value == ' ' }.keys
 end
 
-# Methods to determine the best move 
+# Methods to determine the best move
 def two_in_a_row(winning_line, marker)
   if winning_line.values.count(marker) == 2
-    winning_line.select{|square, value| value == " "}.keys.first
+    winning_line.select { |square, value| value == ' ' }.keys.first
   else
     false
   end
@@ -46,11 +46,10 @@ end
 
 def best_move(board, marker)
   WINNING_LINES.each do |line|
-    best_position = two_in_a_row({line[0] => board[line[0]], line[1] => board[line[1]], line[2] => board[line[2]]}, marker)
+    sub_hash = board.select { |key| line.include? key }
+    best_position = two_in_a_row(sub_hash, marker)
 
-    if best_position
-      return best_position
-    end
+    return best_position if best_position
   end
   nil  
 end
@@ -103,7 +102,7 @@ def announce_winner(board, reference_board)
   else
     line_winner_won_with(board).each do |square|
       highlighted_winning_line[square] = highlighted_o
-    end  
+    end
   end
 
   board.merge!(highlighted_winning_line)
@@ -116,44 +115,48 @@ def announce_winner(board, reference_board)
   end
 end
 
+# Player Turn Helper Methods
+def pick_a_square(board)
+  position = ''
+
+  loop do
+    position = gets.chomp.to_i
+    puts "Please choose an open square."
+    break if empty_squares?(board).include?(position)
+  end 
+
+  position
+end
+
+def pick_with_hint(board, reference_board)
+  position = ''
+
+  loop do 
+    position = gets.chomp
+
+    if position == 'hint'
+      tip(board, reference_board)
+    else
+      position = position.to_i
+    end
+    puts "Please choose an open square."
+    break if empty_squares?(board).include?(position)
+  end
+
+  position
+end
+
 # Determine Player/Computer picks
 def player_picks_square(board, reference_board)
+  position = ''
 
-  if best_move(board, 'O') == nil
-    puts "Pick a Square:"
-
-    begin 
-      position = gets.chomp.to_i
-      puts "Please choose an open square:"
-    end until empty_squares?(board).include?(position)
-
-  elsif best_move(board, 'X')
-
-    begin 
-      position = gets.chomp
-      
-      if position == "hint"
-        tip(board, reference_board)
-      else
-        position = position.to_i
-      end
-      puts "Please choose an open square:"
-    end until empty_squares?(board).include?(position)
-
-  elsif best_move(board, 'O')
+  if best_move(board, 'X') || best_move(board, 'O')
     puts "Pick a Square (Type 'hint' if you need some help):"
+    position = pick_with_hint(board, reference_board)
 
-    begin 
-      position = gets.chomp
-      
-      if position == "hint"
-        tip(board, reference_board)
-      else
-        position = position.to_i
-      end
-      puts "Please choose an open square:"
-    end until empty_squares?(board).include?(position)
-
+  elsif best_move(board, 'O').nil?
+    puts "Pick a Square:"
+    position = pick_a_square(board)
   end
 
   board[position] = 'X' 
@@ -202,6 +205,6 @@ loop do
   end
 
   puts "\nAnother round? (Y/N)"
-  break if gets.chomp.downcase != "y"
+  break if gets.chomp.downcase != 'y'
 
 end
