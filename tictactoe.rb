@@ -1,4 +1,3 @@
-require 'pry'
 require 'colorize'
 
 WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [1, 4, 7], [2, 5, 8], [3, 6, 9], [1, 5, 9], [3, 5, 7]]
@@ -87,13 +86,10 @@ def line_winner_won_with(board)
   end
 end
 
-def announce_winner(board, reference_board)
-  system "clear"
-
+def highlight_winner_squares(board, winner)
   highlighted_winning_line = {}
   highlighted_x = 'X'.colorize(:green)
   highlighted_o = 'O'.colorize(:red)
-  winner = check_winner(board)
 
   if winner == "Player"
     line_winner_won_with(board).each do |square|
@@ -104,6 +100,15 @@ def announce_winner(board, reference_board)
       highlighted_winning_line[square] = highlighted_o
     end
   end
+
+  highlighted_winning_line
+end
+
+def announce_winner(board, reference_board)
+  system "clear"
+
+  winner = check_winner(board)
+  highlighted_winning_line = highlight_winner_squares(board, winner)
 
   board.merge!(highlighted_winning_line)
   draw_board(board, reference_board)
