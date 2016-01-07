@@ -1,81 +1,30 @@
 require 'pry'
-require 'colorize'
-
-# Pseudo Code
-# ----------------------------------------
-# Player is dealt two cards
-# Dealer is dealt two cards
-# Player choose to "hit" or "stay"
-
-# Player's Turn - 
-# if hit - Player is dealt one card
-  # Check the sum of player's cards
-    # if greater - bust
-    # if 21 - win
-    # if less than 21 - player can choose to hit (loop) or stay (break)
-# end
-
-# Dealer's Turn - 
-# if stay - it is Dealer's turn
-  # Check the sum of dealer's cards
-    # if less than 17 - hit
-    # if 21 - win
-    # if hit - dealer is dealt one card
-    # if stay - break
-# end
-
-# If neither the player or dealer won
-# Reveal cards and compare the sum of the two hands
-# Higher value wins
-
-# Play again?
-# ----------------------------------------
 
 # Initialize Game
-def initialize_deck(number_of_decks)
+def initialize_deck(number_of_decks = 3)
   set = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
   suits = ['♠', '♥', '♣', '♦']
-  d = {}
-  number_of_decks.times do 
-    set.each do |card|
-      suits.each do |suit|
-        card_with_suit = "#{card} #{suit}"
-        if card.to_i != 0
-          d[card_with_suit] = { value: card.to_i }
-        elsif card == "J" || card == "Q" || card == "K"
-          d[card_with_suit] = { value: 10 }
-        elsif card == "A"
-          d[card_with_suit] = { value: 11, alt_value: 1 } 
-        end
-      end
-    end
-  end
-  d
+
+  single_deck = set.product(suits)
+  deck = []
+  number_of_decks.times { deck.concat(single_deck) }
+  deck.shuffle!
 end
 
 def initialize_hand
-  hand = {}
+  hand = []
 end
 
 # Divider
 def print_divider
-  puts "------------------------------------------"
+  puts '------------------------------------------'
 end
 
 # Returns a random card from the deck
-def random_card(deck)
-  card = deck.keys.sample
-  value = deck.fetch(card)
-  deck.delete(card)
-
-  card_dealt = [card, value]
-  card_dealt
-end
-
 def deal_cards(deck, hand, num)
-  num.times do 
-    card_dealt = random_card(deck)
-    hand[card_dealt[0]] = card_dealt[1]
+  num.times do
+    card_dealt = deck.shift
+    hand << card_dealt
   end
 end
 
@@ -84,47 +33,57 @@ def hit(deck, hand)
 end
 
 # Display Cards
-def display_cards(hand)
-  hand.each { |card, _| puts "- #{card}" }
+def display_card(card)
+  "#{card[0]} #{card[1]}"
+end
+
+def display_hand(hand)
+  hand.each { |card| puts "- #{display_card(card)}" }
 end
 
 def display_dealer_upcard(hand)
-  puts "The Dealer's upcard is: #{hand.keys.first}"
+  upcard = hand.first
+  puts "The Dealer's upcard is: #{display_card(upcard)}"
 end
 
-# Change Ace Value
-def ace_cards_held(hand)
-  ace_cards = nil
-
-  hand.keys.each do |card|
-    if card.include?("A")
-      ace_cards = []
-      ace_cards << card
-    end
-  end
-  ace_cards
+# Display state of game
+def display_opening_table(player, dealer)
+  display_dealer_upcard(dealer)
+  print_divider
+  puts "#{PLAYER_NAME}'s hand:"
+  display_hand(player)
 end
 
-def should_change_ace_value?(hand)
-  bust?(hand) && ace_cards_held(hand)
-end
+def display_table(player, dealer)
+  system 'clear'
 
-def set_ace_value_to_one(hand)
-  default_ace_value = { value: 11, alt_value: 1 }
-  ace_cards = ace_cards_held(hand)
-
-  ace_cards.each do |ace|
-    hand[ace] = { value: 1, alt_value: 11 }
-  end
+  puts "Dealer's Hand:"
+  display_hand(dealer)
+  print_divider
+  puts "#{PLAYER_NAME}'s Hand:"
+  display_hand(player)
 end
 
 # Sum of Cards
 def sum_of_cards(hand)
-  sum = 0
+  values = hand.map { |card| card[0] }
 
-  hand.each do |card, values|
-    sum += values[:value]
+  sum = 0
+  values.each do |value|
+    if value == 'A'
+      sum += 11
+    elsif value.to_i == 0
+      sum += 10
+    else
+      sum += value.to_i
+    end
   end
+
+  # correct for Aces
+  values.select { |card| card[0] == 'A' }.count.times do
+    sum -= 10 if sum > 21
+  end
+
   sum
 end
 
@@ -133,28 +92,12 @@ def got_blackjack?(hand)
   sum_of_cards(hand) == 21
 end
 
-def announce_blackjack(player, dealer)
-  if got_blackjack?(player)
-    puts "\n#{PLAYER_NAME.upcase} GOT BLACKJACK!"
-  elsif got_blackjack?(dealer)
-    puts "\nDEALER GOT BLACKJACK."
-  end
-end
-
 def bust?(hand)
   sum_of_cards(hand) > 21
 end
 
-def announce_bust(player, dealer)
-  if bust?(player)
-    puts "\nOH NO! #{PLAYER_NAME.upcase} BUST."
-  elsif bust?(dealer)
-    puts "\nDEALER BUST."
-  end
-end
-
-def win_by_blackjack_or_bust?(player, dealer)
-  got_blackjack?(dealer) || bust?(player) || got_blackjack?(player) || bust?(dealer)
+def win_by_blackjack_or_bust?(hand)
+  got_blackjack?(hand) || bust?(hand)
 end
 
 # Check for Winner
@@ -163,101 +106,80 @@ def check_winner(player, dealer)
   player_total = sum_of_cards(player)
 
   # Blackjack or Bust
-  if win_by_blackjack_or_bust?(player, dealer)
-    if got_blackjack?(player) || bust?(dealer)
-      winner = "#{PLAYER_NAME}"
-    elsif got_blackjack?(dealer) || bust?(player)
-      winner = 'Dealer'
-    end
-  # No Blackjack and No Bust
-  elsif dealer_total > player_total
-    winner = 'Dealer'
-  elsif player_total > dealer_total
+  if got_blackjack?(player) || bust?(dealer) || player_total > dealer_total
     winner = "#{PLAYER_NAME}"
+  elsif got_blackjack?(dealer) || bust?(player) || dealer_total > player_total
+    winner = 'Dealer'
   elsif dealer_total == player_total
     winner = 'It\'s a tie.'
   end
+
   winner
 end
 
-def announce_winner(player, dealer)
+def announce_winner(player, dealer, round)
   winner = check_winner(player, dealer)
 
-  if got_blackjack?(player) || got_blackjack?(dealer) || bust?(player) || bust?(dealer)
-    puts "\nWinner: #{winner}"
+  puts ''
+
+  if got_blackjack?(player)
+    puts 'Congratulations, you got blackjack!'
+  elsif bust?(player)
+    puts 'Oh no, you bust.'
+  elsif got_blackjack?(dealer)
+    puts 'Sorry, Dealer got blackjack!'
+  elsif bust?(dealer)
+    puts 'Dealer bust.'
   else
-    puts "#{PLAYER_NAME}'s hand:"
-    display_cards(player)
-    puts "The sum of #{PLAYER_NAME}'s hand is #{sum_of_cards(player)}.\n\n"
-    puts "Dealer's hand:"
-    display_cards(dealer)
-    puts "The sum of the dealer's hand is #{sum_of_cards(dealer)}.\n\n"
-    puts "Winner: #{winner}"
+    puts "The sum of #{PLAYER_NAME}'s hand is #{sum_of_cards(player)}."
+    puts "The sum of the Dealer's hand is #{sum_of_cards(dealer)}."
   end
 
-  print_divider
+  puts "\nWinner of Round #{round}: #{winner}"
 end
 
 # Player Turn
 def player_turn(deck, hand)
   action = ''
 
-  puts "| #{PLAYER_NAME}'s Turn |\n\n"
-
-  loop do 
-    # Display cards in hand 
-    puts "#{PLAYER_NAME}'s hand:"
-    display_cards(hand)
-
-    if should_change_ace_value?(hand)
-      set_ace_value_to_one(hand)
-    end
-
+  loop do
     # Display sum of cards
-    puts "\nThe sum of your cards is: #{sum_of_cards(hand)}"
+    puts "The sum of your cards is: #{sum_of_cards(hand)}"
     break if got_blackjack?(hand) || bust?(hand) || action == 'stay'
 
     # Hit or Stay
-    puts 'Would you like to "Hit" or "Stay"?'
+    puts "\nWould you like to 'Hit' or 'Stay'?"
+    action = gets.chomp.downcase
 
-    loop do
+    while !(['hit', 'stay'].include?(action))
+      puts 'Please choose either to Hit" or "Stay":'
       action = gets.chomp.downcase
+    end
 
-      if action == 'hit' || action == 'stay'
-        break
-      else
-        puts 'Please choose either to "Hit" or "Stay":'
-      end
-    end 
+    if action == 'hit'
+      hit(deck, hand)
+      card_dealt = hand.last
+      puts "\n=> You hit and draw a #{display_card(card_dealt)}"
+    end
 
-    hit(deck, hand) if action == 'hit'
-    print_divider
     break if action == 'stay'
   end
 end
 
 # Dealer's Turn
 def dealer_turn(deck, hand)
-  action = ''
+  puts "\nThe sum of the Dealer's cards is: #{sum_of_cards(hand)}"
 
-  puts "| Dealer's Turn |\n\n"
-
-  loop do 
-    puts "Dealer's hand:"
-    display_cards(hand)
-
-    if should_change_ace_value?(hand)
-      set_ace_value_to_one(hand)
-    end
-
+  loop do
     sleep 1
     # Hit if sum of cards is less than 17
     if sum_of_cards(hand) < 17
       hit(deck, hand)
-      puts 'Dealer hits.'
+      puts "=> Dealer hits and draws a #{display_card(hand.last)}"
+      puts "The sum of the Dealer's cards is: #{sum_of_cards(hand)}"
     # Stay if sum is 17 - 21
     elsif sum_of_cards(hand) < 21
-      puts 'Dealer stays.'
+      puts '=> Dealer stays.'
       break
     end
     break if got_blackjack?(hand) || bust?(hand)
@@ -269,19 +191,18 @@ end
 # Game Rundown
 system 'clear'
 
-number_of_decks = 3
-deck = initialize_deck(number_of_decks)
+deck = initialize_deck
 round = 1
 player_wins = 0
 
-puts 'Welcome to the Blackjack table.'
+puts 'Welcome to the Blackjack table!'
 puts 'What is your name?'
 PLAYER_NAME = gets.chomp
 
 loop do
   player_hand = initialize_hand
   dealer_hand = initialize_hand
-  
+
   winner = nil
 
   system 'clear'
@@ -289,27 +210,29 @@ loop do
 
   deal_cards(deck, player_hand, 2)
   deal_cards(deck, dealer_hand, 2)
-  display_dealer_upcard(dealer_hand)
+  display_opening_table(player_hand, dealer_hand)
   print_divider
 
-  begin
+  while winner.nil?
     player_turn(deck, player_hand)
-    break if got_blackjack?(player_hand) || bust?(player_hand)
+    break if win_by_blackjack_or_bust?(player_hand)
+    display_table(player_hand, dealer_hand)
     dealer_turn(deck, dealer_hand)
-    break if got_blackjack?(player_hand) || bust?(player_hand)
+    break if win_by_blackjack_or_bust?(dealer_hand)
     winner = check_winner(dealer_hand, player_hand)
-  end until winner != nil
+  end
 
-  announce_blackjack(player_hand, dealer_hand)
-  announce_bust(player_hand, dealer_hand)
-  announce_winner(player_hand, dealer_hand)
+  # announce_blackjack(player_hand, dealer_hand)
+  # announce_bust(player_hand, dealer_hand)
+  announce_winner(player_hand, dealer_hand, round)
 
   # Track number of times player wins
   if check_winner(player_hand, dealer_hand) == "#{PLAYER_NAME}"
     player_wins += 1
   end
 
-  puts "Play again? (Y/N)"
+  print_divider
+  puts 'Play again? (Y/N)'
   choice = gets.chomp.downcase
 
   if choice == 'y'
@@ -317,8 +240,7 @@ loop do
     redo
   end
   break if choice != 'y'
-end 
+end
 
-print_divider
-puts "Thank you for playing!"
+puts 'Thank you for playing!'
 puts "You won #{player_wins} hands out of #{round}."
