@@ -103,7 +103,6 @@ def check_winner(player, dealer)
   dealer_total = sum_of_cards(dealer)
   player_total = sum_of_cards(player)
 
-  # Blackjack or Bust
   if got_blackjack?(player) || bust?(dealer) || player_total > dealer_total
     winner = "#{PLAYER_NAME}"
   elsif got_blackjack?(dealer) || bust?(player) || dealer_total > player_total
@@ -220,8 +219,6 @@ loop do
     winner = check_winner(dealer_hand, player_hand)
   end
 
-  # announce_blackjack(player_hand, dealer_hand)
-  # announce_bust(player_hand, dealer_hand)
   announce_winner(player_hand, dealer_hand, round)
 
   # Track number of times player wins
